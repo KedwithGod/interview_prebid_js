@@ -1,0 +1,47 @@
+# prebid-server.yaml
+host: "0.0.0.0"
+port: 8080
+
+gdpr:
+  default_value: 0  # Default GDPR consent value (0 = no consent, 1 = consent given)
+  host_vendor_id: 1 # Set a host vendor ID if required for GDPR checks.
+
+adapters:
+  appnexus:
+    enabled: true
+  openx:
+    enabled: true
+  rubicon:
+    enabled: true
+    usersync:
+      iframe:
+        url: "https://pixel.rubiconproject.com/pixel.gif"
+      redirect:
+        url: "https://sync.rubiconproject.com/usync"
+  bcmint:
+    enabled: true
+    usersync:
+      iframe:
+        url: "https://bcmint-sync.example.com/iframe"
+      redirect:
+        url: "https://bcmint-sync.example.com/redirect"
+  generic:
+    enabled: true
+    endpoint: "http://localhost:8085/bid" 
+  # Add other bidders similarly...
+
+accounts:
+  enabled: true
+  default:
+    debug_allowed: true  # Allow debugging for the default account
+  12345:
+    debug_allowed: true  # Example account ID with debugging allowed
+
+endpoints:
+  openrtb2/auction:
+    enabled: true  # Enable the OpenRTB auction endpoint
+
+metrics:
+  inflight_request_limit: 1000  # Adjust according to server capacity
+
+default_ttl_seconds: 3600  # Default Time-to-Live for bids in seconds

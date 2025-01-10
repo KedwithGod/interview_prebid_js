@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Bidding Full Flow</title>
+    <script src="prebid9.26.0.js"></script>
+</head>
+
+<body>
+    <div id="ad-slot-1" class="ad-slot" style="width: 300px; height: 250px; border: 1px solid #000;">
+        <!-- Ad will be dynamically inserted here -->
+        <p>Loading ad...</p>
+    </div>
+
+    <div id="ad-slot-2" class="ad-slot" style="width: 300px; height: 250px; border: 1px solid #000;">
+        <!-- Ad will be dynamically inserted here -->
+        <p>Loading ad...</p>
+    </div>
+
+    <script>
+        // 1. Define Ad Units with responsive sizes
+        const adUnits = [
+            {
+                code: 'ad-slot-1',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250], [728, 90]], // Desktop and Mobile
+                    },
+                },
+                bids: [
+                    {
+                        bidder: 'appnexus',
+                        params: { placementId: '123456' }, // Example SSP1
+                    },
+                    {
+                        bidder: 'rubicon',
+                        params: { accountId: '78910', siteId: '111213', zoneId: '141516' }, // Example SSP2
+                    },
+                ],
+            },
+            {
+                code: 'ad-slot-2',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250], [728, 90]], // Desktop and Mobile
+                    },
+                },
+                bids: [
+                    {
+                        bidder: 'appnexus',
+                        params: { placementId: '654321' }, // Example SSP1
+                    },
+                    {
+                        bidder: 'rubicon',
+                        params: { accountId: '98765', siteId: '54321', zoneId: '11111' }, // Example SSP2
+                    },
+                ],
+            },
+        ];
+
+        // 2. Initialize Prebid.js
+        pbjs.que = pbjs.que || [];
+        pbjs.que.push(() => {
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                bidsBackHandler: (bids) => {
+                    // Trigger ad server once bidding is complete
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                },
+                timeout: 1000, // Timeout in milliseconds
+            });
+        });
+
+        // 3. Dynamic Floor Pricing based on ad size and device type
+        const dynamicFloorPricing = (adSize, deviceType) => {
+            if (deviceType === 'mobile') {
+                return adSize[0] === 300 && adSize[1] === 250 ? 0.50 : 0.30;
+            } else {
+                return adSize[0] === 728 && adSize[1] === 90 ? 1.00 : 0.80;
+            }
+        };
+
+        // 4. Analytics Integration (Google Analytics)
+        pbjs.que.push(() => {
+            pbjs.onEvent('auctionEnd', (auctionData) => {
+                const bids = auctionData.bidsReceived;
+                bids.forEach((bid) => {
+                    gtag('event', 'ad_bid', {
+                        event_category: 'Header Bidding',
+                        event_label: bid.bidder,
+                        value: bid.cpm,
+                    });
+                });
+            });
+        });
+
+        // 5. Error Handling: Logging and handling bid failures and timeouts
+        pbjs.que.push(() => {
+            pbjs.onEvent('bidTimeout', (data) => {
+                console.error('Bids timed out:', data);
+            });
+
+            pbjs.onEvent('auctionEnd', (auctionData) => {
+                if (!auctionData.bidsReceived.length) {
+                    console.warn('No valid bids received. Serving fallback ad.');
+                    serveFallbackAd();
+                }
+            });
+        });
+
+        // 6. Fallback Ad Solution
+        function serveFallbackAd() {
+            document.getElementById('ad-slot-1').innerHTML = '<img src="fallback.jpg" alt="Fallback Ad" style="width: 300px; height: 250px; border: 1px solid #ccc;" />';
+            document.getElementById('ad-slot-2').innerHTML = '<img src="fallback.jpg" alt="Fallback Ad" style="width: 300px; height: 250px; border: 1px solid #ccc;" />';
+        }
+
+
+        // 7. Lazy Loading Ads (Intersection Observer)
+        const lazyLoadAds = () => {
+            const adSlots = document.querySelectorAll('.ad-slot');
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting) {
+                            pbjs.requestBids({ timeout: 1000 });
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                },
+                { threshold: 0.5 }
+            );
+
+            adSlots.forEach((slot) => observer.observe(slot));
+        };
+
+        window.onload = lazyLoadAds;
+
+        // 8. Bid Validation (OpenRTB Rules)
+        const validateBid = (bid) => {
+            return bid.price > 0 && bid.adm && bid.adomain && bid.adomain.length > 0;
+        };
+
+        // 9. Initialize the Header Bidding Flow
+        pbjs.que.push(() => {
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                timeout: 2000,
+                bidsBackHandler: (bids) => {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                },
+            });
+        });
+
+        // 10. CI/CD Integration (GitHub Actions for deployment automation)
+        // GitHub Action YAML file is separate, usually placed in `.github/workflows/ci.yml`
+
+    </script>
+</body>
+
+</html>

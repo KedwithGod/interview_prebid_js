@@ -1,191 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Header Bidding System with Content</title>
-    <script async src="prebid9.26.0.js"></script>
-    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-            overflow-y: scroll;
-        }
-
-        header {
-            background: #007bff;
-            color: #fff;
-            padding: 10px 20px;
-            text-align: center;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 10px;
-        }
-
-        .ad-slot {
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        footer {
-            background: #333;
-            color: #fff;
-            text-align: center;
-            padding: 10px 0;
-            margin-top: 20px;
-        }
-    </style>
+    <title>Header Bidding Full Flow</title>
+    <script src="https://cdn.jsdelivr.net/npm/prebid.js@4.45.0/dist/prebid.min.js"></script>
 </head>
-
 <body>
-    <header>
-        <h1>Header Bidding Demo</h1>
-    </header>
-
-    <div class="container">
-        <p>
-            Welcome to our demo page showcasing the integration of a header
-            bidding solution.
-            This page demonstrates how ads are dynamically loaded and
-            optimized for better revenue
-            generation using Prebid.js.
-        </p>
-        <p>
-            The content here is placeholder text designed to make the page
-            feel realistic.
-            Keep scrolling to see more content and ads as they load
-            dynamically.
-        </p>
-
-        <!-- Ad Slot -->
-        <div id="div-gpt-ad-123456" class="ad-slot" style="width: 300px; height: 250px;">
-            <p>Loading ad...</p>
-        </div>
-
-        <h2>About Header Bidding</h2>
-        <p>
-            Header bidding is an advanced programmatic advertising technique
-            that allows publishers
-            to auction their ad inventory to multiple demand partners
-            simultaneously before making
-            an ad server request. This ensures the highest possible yield
-            for each impression.
-        </p>
-
-        <h2>Why Use Header Bidding?</h2>
-        <ul>
-            <li>Increased competition among demand sources.</li>
-            <li>Better fill rates and higher CPMs.</li>
-            <li>Transparency in the bidding process.</li>
-        </ul>
-
-        <!-- Additional Ad Slot (Optional) -->
-        <div id="div-gpt-ad-654321" class="ad-slot" style="width: 728px; height: 90px;">
-            <p>Loading ad...</p>
-        </div>
+    <div id="ad-slot" style="width: 300px; height: 250px; border: 1px solid #000;">
+        <!-- Ad will be dynamically inserted here -->
+        <p>Loading ad...</p>
     </div>
 
-    <footer>
-        <p>&copy; 2025 Header Bidding Demo. All rights reserved.</p>
-    </footer>
-
     <script>
-        // Initialize Prebid.js
-        var pbjs = pbjs || {};
-        pbjs.que = pbjs.que || [];
-    
-        // Define Ad Units
-        var adUnits = [
-            {
-                code: 'div-gpt-ad-123456', // Unique ID for the first ad slot
-                mediaTypes: {
-                    banner: {
-                        sizes: [[300, 250], [320, 50]] // Sizes for this ad slot
-                    }
-                },
-                bids: [
-                    {
-                        bidder: 'appnexus',
-                        params: { placementId: '10433394' }
-                    },
-                    {
-                        bidder: 'pubmatic',
-                        params: {
-                            publisherId: '156209',
-                            adSlot: 'pubmatic_test_adslot'
-                        }
-                    }
-                ]
-            },
-            {
-                code: 'div-gpt-ad-654321', // Unique ID for the second ad slot
-                mediaTypes: {
-                    banner: {
-                        sizes: [[728, 90], [970, 250]] // Sizes for this ad slot
-                    }
-                },
-                bids: [
-                    {
-                        bidder: 'appnexus',
-                        params: { placementId: '10433394' }
-                    },
-                    {
-                        bidder: 'pubmatic',
-                        params: {
-                            publisherId: '156209',
-                            adSlot: 'pubmatic_test_adslot'
-                        }
-                    }
-                ]
-            }
-        ];
-    
-        // Dynamic Floor Pricing
-        pbjs.que.push(function () {
-            pbjs.setConfig({
-                priceGranularity: 'dense',
-                floors: {
-                    data: [
-                        { size: [300, 250], floor: 0.50 },
-                        { size: [728, 90], floor: 1.00 }
-                    ]
-                }
-            });
-        });
-    
-        // Prebid.js Configuration
-        pbjs.que.push(function () {
-            pbjs.addAdUnits(adUnits);
-            pbjs.setConfig({ debug: true }); // Enable debugging
-            pbjs.requestBids({
-                bidsBackHandler: function () {
-                    pbjs.setTargetingForGPTAsync();
-                    googletag.pubads().refresh();
-                },
-                timeout: 1000
-            });
-        });
-    
-        // GPT Configuration
-        var googletag = googletag || {};
-        googletag.cmd = googletag.cmd || [];
-        googletag.cmd.push(function () {
-            googletag.defineSlot('/123456/homepage', [[300, 250], [320, 50]], 'div-gpt-ad-123456')
-                .addService(googletag.pubads());
-            googletag.defineSlot('/123456/homepage', [[728, 90], [970, 250]], 'div-gpt-ad-654321')
-                .addService(googletag.pubads());
-            googletag.pubads().enableSingleRequest();
-            googletag.enableServices();
-        });
-    </script>
-    
-</body>
+        async function fetchInventoryFromSSP() {
+            const sspEndpoint = 'http://localhost:8004/ssp/inventory'; // Replace with your SSP endpoint
 
+            try {
+                const response = await fetch(sspEndpoint, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const inventory = await response.json();
+                console.log('Inventory from SSP:', inventory);
+
+                return inventory;
+            } catch (error) {
+                console.error('Error fetching inventory from SSP:', error);
+                return null;
+            }
+        }
+
+        async function sendInventoryToDSP(inventory) {
+            const dspEndpoint = 'http://localhost:8003/dsp'; // Replace with your DSP endpoint
+
+            const payload = {
+                id: 'req_' + Math.random().toString(36).substr(2, 9),
+                imp: inventory.map((item, index) => ({
+                    id: 'imp_' + index,
+                    banner: item.banner,
+                })),
+                site: {
+                    domain: window.location.hostname,
+                    page: window.location.href,
+                },
+                device: {
+                    ua: navigator.userAgent,
+                    ip: null,
+                },
+            };
+
+            try {
+                const response = await fetch(dspEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const bidResponse = await response.json();
+                console.log('Bid Response from DSP:', bidResponse);
+
+                return bidResponse;
+            } catch (error) {
+                console.error('Error sending inventory to DSP:', error);
+                return null;
+            }
+        }
+
+        function determineWinningBid(bidResponse) {
+            const seatBid = bidResponse?.seatbid && bidResponse.seatbid[0];
+
+            if (seatBid) {
+                const winningBid = seatBid.bid.reduce((highestBid, bid) => {
+                    return (bid.price > highestBid.price) ? bid : highestBid;
+                }, seatBid.bid[0]);
+
+                console.log('Winning Bid:', winningBid);
+                return winningBid;
+            } else {
+                console.log('No bids received.');
+                return null;
+            }
+        }
+
+        async function displayWinningAd(winningBid) {
+            if (!winningBid) {
+                const adSlot = document.getElementById('ad-slot');
+                adSlot.innerHTML = '<p>No ad available</p>';
+                return;
+            }
+
+            const adSlot = document.getElementById('ad-slot');
+            adSlot.innerHTML = `<video width="300" height="250" controls>
+                <source src="${winningBid.adm}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>`;
+
+            // Notify the DSP server of the win
+            const winUrl = winningBid.nurl.replace('${AUCTION_PRICE}', winningBid.price);
+            try {
+                await fetch(winUrl);
+                console.log('Win notification sent to DSP');
+            } catch (error) {
+                console.error('Error sending win notification:', error);
+            }
+        }
+
+        // Main Function: Handles the Full Flow
+        async function handleHeaderBidding() {
+            // 1. Fetch Inventory from SSP
+            const inventory = await fetchInventoryFromSSP();
+
+            if (!inventory) {
+                console.error('No inventory fetched from SSP.');
+                return;
+            }
+
+            // 2. Send Inventory to DSP and Get Bids
+            const bidResponse = await sendInventoryToDSP(inventory);
+
+            if (!bidResponse) {
+                console.error('No bids received from DSP.');
+                return;
+            }
+
+            // 3. Determine the Winning Bid
+            const winningBid = determineWinningBid(bidResponse);
+
+            // 4. Display the Winning Ad
+            await displayWinningAd(winningBid);
+        }
+
+        // Start the Header Bidding Flow
+        handleHeaderBidding();
+    </script>
+</body>
 </html>

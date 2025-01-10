@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  prebid-server:
+    image: prebid/prebid-server:v3.6.0
+    container_name: prebid-server
+    ports:
+      - "8000:8000" # Map container port to host port
+    environment:
+      PBS_HOST: "0.0.0.0"              # Host to listen on
+      PBS_PORT: "8000"                 # Port to listen on
+      PBS_DEFAULT_CURRENCY: "USD"      # Default currency
+      PBS_ADAPTERS_APPNEXUS_ENDPOINT: "https://ib.adnxs.com/openrtb2" # Example adapter
+      PBS_DEBUG: "true"                # Enable debugging
+      GDPR_DEFAULT_VALUE: "1"         # Enable GDPR by default (1 for true, 0 for false)
+      GDPR_HOST_VENDOR_ID: "1"        # Host vendor ID for GDPR checks (adjust as per your setup)
+    volumes:
+      - ./config:/etc/prebid-server    # Mount custom config directory (optional)
+      - ./prebid-server.yaml:/etc/prebid/prebid-server.yaml
+
+  postgres:
+    image: postgres:13
+    container_name: prebid-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: prebid
+      POSTGRES_USER: prebid
+      POSTGRES_PASSWORD: prebidpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+volumes:
+  pg_data:

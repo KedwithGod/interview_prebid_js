@@ -1,0 +1,12 @@
+1. The application is in two forms a. one for prebid js, located in prebid.hmtl and the other one is for openRTB and in the index.html
+2. To serve the prebid.html, start the docker container for prebid server by running 
+a. docker-compose build
+b. docker-compose up -d
+c. then serve the prebid.html file, this will run the prebid and show the ad, if not avaialbe, a fallback ad will be show
+
+3. For the openRTB, I am using supply-side custom setup
+a. run cd supply-side-platform
+b. run npm install 
+c. node server.js for ssp server
+d.  node mockdsp/server.js to start the dsp server
+e. then server the html file, to see the live bid, you can check the console of the developer tool
